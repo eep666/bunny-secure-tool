@@ -54,6 +54,7 @@ const AppContent = () => {
     const [chaptersText, setChaptersText] = useState('');
     
     // State for loading and messages
+    // THIS IS THE CORRECTED LINE:
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -184,9 +185,11 @@ export default function Home() {
             <Head>
                 <title>Bunny.net Chapter Update Tool</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                {/* MOVED THIS LINE UP and removed 'defer' to fix the style flash */}
+                <script src="https://cdn.tailwindcss.com"></script>
             </Head>
             {/* We need to use Tailwind, so we add the CDN link in the Head */}
-            <script src="https://cdn.tailwindcss.com" defer></script>
+            
             {/* Add global styles */}
             <style jsx global>{`
                 body {
