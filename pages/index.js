@@ -18,54 +18,13 @@ const InputField = ({ label, value, onChange, placeholder, type = 'text' }) => (
 // --- Main App Component ---
 export default function Home() {
     // State for form inputs
-    // We NO LONGER store the apiKey in state.
     const [libraryId, setLibraryId] = useState('');
     const [videoId, setVideoId] = useState('');
     const [chaptersText, setChaptersText] = useState('');
-    const [mode, setMode] = useState('simple'); // 'simple' or 'json'
     
-    // State for AI Generator
-    const [isAiLoading, setIsAiLoading] = useState(false);
-
     // State for loading and messages
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-
-    // --- AI Generator Logic ---
-    const handleAiSubmit = async () => {
-        if (chaptersText.trim() === '') {
-            setMessage({ type: 'error', text: 'Please enter some raw chapter text first.' });
-            return;
-        }
-        setIsAiLoading(true);
-        setMessage({ type: '', text: '' });
-
-        try {
-            // Call our OWN backend API route
-            const response = await fetch('/api/generateChapters', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rawText: chaptersText })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'AI generation failed.');
-            }
-            
-            // Success! Format and set the state.
-            const prettyJson = JSON.stringify(data, null, 2);
-            setChaptersText(prettyJson); // Set main text area
-            setMode('json'); // Switch to JSON mode
-            setMessage({ type: 'success', text: 'AI generation successful! Review the JSON below and submit.' });
-
-        } catch (error) {
-            setMessage({ type: 'error', text: `AI Error: ${error.message}` });
-        } finally {
-            setIsAiLoading(false);
-        }
-    };
 
     // --- Main Bunny.net Submit Logic ---
     const handleSubmit = async (e) => {
@@ -75,14 +34,14 @@ export default function Home() {
 
         try {
             // Call our OWN backend API route
+            // We just send the raw text. The backend will figure out the format.
             const response = await fetch('/api/updateChapters', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     libraryId,
                     videoId,
-                    chaptersText,
-                    mode
+                    chaptersText // Send the raw text
                 })
             });
 
@@ -102,28 +61,14 @@ export default function Home() {
         }
     };
 
-    const simplePlaceholder = `Enter chapters, one per line. Format:
-start_seconds, end_seconds, Chapter Title
+    const simplePlaceholder = `Paste your chapter data here.
+You can use Simple Format (one per line):
 0, 59, Introduction
 60, 299, Main Content
-300, 540, Conclusion`;
 
-    const jsonPlaceholder = `Enter the full JSON payload, like in Postman.
-Example:
-{
-  "chapters": [
-    {
-      "title": "Introduction",
-      "start": 0,
-      "end": 59
-    },
-    {
-      "title": "Main Content",
-      "start": 60,
-      "end": 299
-    }
-  ]
-}`;
+...or you can paste the full JSON:
+{"chapters": [{"title": "Intro", "start": 0, "end": 59}]}
+`;
 
     // --- Render the UI ---
     return (
@@ -151,23 +96,6 @@ Example:
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
-                .toggle-btn {
-                    padding: 0.5rem 1rem;
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                    border-radius: 0.375rem;
-                }
-                .toggle-btn-active {
-                    background-color: #2563EB; /* bg-blue-600 */
-                    color: white;
-                }
-                .toggle-btn-inactive {
-                    background-color: #374151; /* bg-gray-700 */
-                    color: #D1D5DB; /* text-gray-300 */
-                }
-                .toggle-btn-inactive:hover {
-                    background-color: #4B5563; /* bg-gray-600 */
-                }
             `}</style>
             
             <div className="flex flex-col items-center justify-start min-h-screen p-4 py-12 font-sans text-gray-200">
@@ -176,13 +104,10 @@ Example:
                         Bunny.net Chapter Update Tool
                     </h1>
                     
-                    {/* The API Key warning is no longer needed! */}
-
                     <form onSubmit={handleSubmit}>
                         {/* --- Credentials Section --- */}
                         <section className="mb-6">
                             <h2 className="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Credentials</h2>
-                            {/* API Key Input is REMOVED */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <InputField
                                     label="Video Library ID"
@@ -199,68 +124,29 @@ Example:
                             </div>
                         </section>
                         
-                        {/* --- Chapter Input Section --- */}
+                        {/* --- Chapter Input Section (Simplified) --- */}
                         <section className="mb-6">
                             <h2 className="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Chapter Data</h2>
-                            <div className="mb-2">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Input Mode</label>
-                                <div className="flex space-x-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setMode('simple')}
-                                        className={`toggle-btn ${mode === 'simple' ? 'toggle-btn-active' : 'toggle-btn-inactive'}`}
-                                    >
-                                        Simple
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setMode('json')}
-                                        className={`toggle-btn ${mode === 'json' ? 'toggle-btn-active' : 'toggle-btn-inactive'}`}
-                                    >
-                                        JSON (Advanced)
-                                    </button>
-                                </div>
-                            </div>
-
+                            
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-300 mb-1">
-                                    {mode === 'simple' ? 'Chapters (Simple Format)' : 'JSON Body'}
-                                </label>
                                 <textarea
                                     value={chaptersText}
                                     onChange={e => setChaptersText(e.target.value)}
                                     rows="10"
                                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                                    placeholder={mode === 'simple' ? simplePlaceholder : jsonPlaceholder}
+                                    placeholder={simplePlaceholder}
                                 ></textarea>
-                                {mode === 'simple' && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Format: <strong>start_seconds, end_seconds, Title</strong>
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* --- AI Generator Button --- */}
-                            <div className="mb-6">
-                                <button
-                                    type="button" // Prevent form submission
-                                    onClick={handleAiSubmit}
-                                    disabled={isAiLoading}
-                                    className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 disabled:bg-gray-600"
-                                >
-                                    {isAiLoading ? <div className="spinner"></div> : 'Generate JSON from Text Above'}
-                                </button>
-                                <p className="text-xs text-gray-500 mt-2 text-center">
-                                    Paste raw text (e.g., "1:30 Intro") above, then click here to convert.
+                                <p className="text-xs text-gray-500 mt-1">
+                                    You can paste Simple Format or the full JSON.
                                 </p>
                             </div>
                         </section>
 
-                        {/* --- Submit Button --- */}
+                        {/* --- Submit Button (Only one) --- */}
                         <section>
                             <button
                                 type="submit"
-                                disabled={isLoading || isAiLoading}
+                                disabled={isLoading}
                                 className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 disabled:bg-gray-600"
                             >
                                 {isLoading ? <div className="spinner"></div> : 'Add/Update Chapters'}
