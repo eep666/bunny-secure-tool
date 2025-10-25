@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     let requestBody;
     try {
-        // --- NEW "SMART" LOGIC ---
+        // --- "SMART" LOGIC to detect format ---
         let potentialJson;
         try {
             // First, try to parse as JSON
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
             requestBody = potentialJson;
         } else {
             // It's not valid chapter-JSON, so assume it's simple format.
-            // Let the simple parser try. This will throw an error if the simple format is *also* wrong.
+            // This will throw an error if the simple format is *also* wrong.
             requestBody = parseChapters(chaptersText);
         }
         // --- END "SMART" LOGIC ---
