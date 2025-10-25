@@ -1,8 +1,13 @@
 // --- Helper function to parse the SIMPLE chapter text ---
-// This is duplicated from the frontend, but it's good practice
-// to validate/parse on the server.
 const parseChapters = (chaptersText) => {
+    // Filter out empty lines
     const lines = chaptersText.split('\n').filter(line => line.trim() !== '');
+    
+    // Check if there are any lines to parse
+    if (lines.length === 0) {
+        throw new Error('No chapter data was provided.');
+    }
+
     const chapters = lines.map(line => {
         const parts = line.split(',');
         if (parts.length < 3) {
@@ -15,6 +20,10 @@ const parseChapters = (chaptersText) => {
 
         if (isNaN(start) || isNaN(end)) {
             throw new Error(`Invalid timestamps in line: "${line}".`);
+        }
+        
+        if (title.trim() === '') {
+             throw new Error(`Missing title in line: "${line}".`);
         }
 
         return { title, start, end };
@@ -37,23 +46,37 @@ export default async function handler(req, res) {
     }
 
     // 2. Get data from the frontend
-    const { libraryId, videoId, chaptersText, mode } = req.body;
+    const { libraryId, videoId, chaptersText } = req.body;
 
-    if (!libraryId || !videoId || !chaptersText || !mode) {
-        return res.status(400).json({ error: 'Missing required fields: libraryId, videoId, chaptersText, mode' });
+    if (!libraryId || !videoId || !chaptersText) {
+        return res.status(400).json({ error: 'Missing required fields: libraryId, videoId, chaptersText' });
     }
 
     let requestBody;
     try {
-        if (mode === 'simple') {
-            requestBody = parseChapters(chaptersText);
-        } else {
-            requestBody = JSON.parse(chaptersText);
-            if (!requestBody.chapters) {
-                throw new Error('Invalid JSON. Must be an object with a "chapters" key.');
-            }
+        // --- NEW "SMART" LOGIC ---
+        let potentialJson;
+        try {
+            // First, try to parse as JSON
+            potentialJson = JSON.parse(chaptersText);
+        } catch (e) {
+            // It's not JSON, so we'll let the simple parser handle it
+            potentialJson = null; 
         }
+
+        // Check if it's valid JSON *and* has the .chapters key
+        if (potentialJson && Array.isArray(potentialJson.chapters)) {
+            // It's JSON format! Use it directly.
+            requestBody = potentialJson;
+        } else {
+            // It's not valid chapter-JSON, so assume it's simple format.
+            // Let the simple parser try. This will throw an error if the simple format is *also* wrong.
+            requestBody = parseChapters(chaptersText);
+        }
+        // --- END "SMART" LOGIC ---
+
     } catch (error) {
+        // Catches errors from parseChapters() if it fails
         return res.status(400).json({ error: `Input Error: ${error.message}` });
     }
 
