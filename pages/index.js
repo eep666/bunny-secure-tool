@@ -16,30 +16,30 @@ const InputField = ({ label, value, onChange, placeholder, type = 'text' }) => (
 );
 
 // --- NEW: Loading Skeleton Component ---
-// This is a simple placeholder that looks like your app.
-// It renders with the initial HTML, so there is no "blank page".
+// This version uses INLINE CSS (in the <style> tag below)
+// and has NO TAILWIND classes, so it loads instantly.
 const LoadingSkeleton = () => (
-    <div className="w-full max-w-2xl bg-gray-800 shadow-2xl rounded-lg p-6 md:p-8 animate-pulse">
+    <div className="skeleton-card">
         {/* Skeleton for Title */}
-        <div className="h-7 bg-gray-700 rounded-md w-1/2 mx-auto mb-6"></div>
+        <div className="skeleton-title"></div>
         
         {/* Skeleton for Credentials */}
-        <div className="mb-6">
-            <div className="h-5 bg-gray-700 rounded-md w-1/4 mb-3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-10 bg-gray-700 rounded-md"></div>
-                <div className="h-10 bg-gray-700 rounded-md"></div>
+        <div className="skeleton-section">
+            <div className="skeleton-subtitle"></div>
+            <div className="skeleton-grid">
+                <div className="skeleton-box"></div>
+                <div className="skeleton-box"></div>
             </div>
         </div>
         
         {/* Skeleton for Chapter Data */}
-        <div className="mb-6">
-            <div className="h-5 bg-gray-700 rounded-md w-1/4 mb-3"></div>
-            <div className="h-36 bg-gray-700 rounded-md"></div>
+        <div className="skeleton-section">
+            <div className="skeleton-subtitle"></div>
+            <div className="skeleton-textarea"></div>
         </div>
         
         {/* Skeleton for Button */}
-        <div className="h-10 bg-gray-700 rounded-md w-full"></div>
+        <div className="skeleton-button"></div>
     </div>
 );
 
@@ -141,7 +141,8 @@ You can use Simple Format (one per line):
                         ></textarea>
                         <p className="text-xs text-gray-500 mt-1">
                             You can paste Simple Format or the full JSON.
-                        </p>
+                        </p> 
+                        {/* THIS IS THE FIX: Changed </Indentation> to </p> */}
                     </div>
                 </section>
 
@@ -188,7 +189,6 @@ export default function Home() {
                 {/* MOVED THIS LINE UP and removed 'defer' to fix the style flash */}
                 <script src="https://cdn.tailwindcss.com"></script>
             </Head>
-            {/* We need to use Tailwind, so we add the CDN link in the Head */}
             
             {/* Add global styles */}
             <style jsx global>{`
@@ -207,21 +207,69 @@ export default function Home() {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
-                /* NEW Skeleton Animation */
+                
+                /* --- NEW SKELETON STYLES --- */
+                /* These load instantly and fix the "flash" */
                 @keyframes pulse {
                     50% {
                         opacity: .5;
                     }
                 }
-                .animate-pulse {
+                .skeleton-card {
+                    width: 100%;
+                    max-width: 42rem; /* max-w-2xl */
+                    background-color: #1F2937; /* bg-gray-800 */
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-2xl */
+                    border-radius: 0.5rem; /* rounded-lg */
+                    padding: 2rem; /* p-8 */
                     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                }
+                .skeleton-title {
+                    height: 1.75rem; /* h-7 */
+                    background-color: #374151; /* bg-gray-700 */
+                    border-radius: 0.375rem; /* rounded-md */
+                    width: 50%;
+                    margin-left: auto;
+                    margin-right: auto;
+                    margin-bottom: 1.5rem; /* mb-6 */
+                }
+                .skeleton-section {
+                    margin-bottom: 1.5rem; /* mb-6 */
+                }
+                .skeleton-subtitle {
+                    height: 1.25rem; /* h-5 */
+                    background-color: #374151; /* bg-gray-700 */
+                    border-radius: 0.375rem; /* rounded-md */
+                    width: 25%;
+                    margin-bottom: 0.75rem; /* mb-3 */
+                }
+                .skeleton-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 1rem; /* gap-4 */
+                }
+                .skeleton-box {
+                    height: 2.5rem; /* h-10 */
+                    background-color: #374151; /* bg-gray-700 */
+                    border-radius: 0.375rem; /* rounded-md */
+                }
+                .skeleton-textarea {
+                    height: 9rem; /* h-36 */
+                    background-color: #374151; /* bg-gray-700 */
+                    border-radius: 0.375rem; /* rounded-md */
+                }
+                .skeleton-button {
+                    height: 2.5rem; /* h-10 */
+                    background-color: #374151; /* bg-gray-700 */
+                    border-radius: 0.375rem; /* rounded-md */
+                    width: 100%;
                 }
             `}</style>
             
             <div className="flex flex-col items-center justify-start min-h-screen p-4 py-12 font-sans text-gray-200">
                 {/* This is the magic:
-                  - If the page is NOT mounted yet, show the Skeleton.
-                  - As soon as the JS loads, show the real AppContent.
+                  - If the page is NOT mounted yet, show the Skeleton (which is now pre-styled).
+                  - As soon as the JS loads, show the real AppContent (which gets styled by Tailwind).
                 */}
                 {isMounted ? <AppContent /> : <LoadingSkeleton />}
             </div>
